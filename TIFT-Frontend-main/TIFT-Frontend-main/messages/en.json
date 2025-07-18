@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "Hello world!",
+    "about": "Go to the about page"
+  },
+  "NotFoundPage": {
+    "errorCode": "404",
+    "title": "Oops! Page Not Found",
+    "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+    "goHome": "Go to Homepage",
+    "goAboutUs": "About us"
+  }
+}
