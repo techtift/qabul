@@ -1,0 +1,10 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.log
+.env
+node_modules/
+frontend/

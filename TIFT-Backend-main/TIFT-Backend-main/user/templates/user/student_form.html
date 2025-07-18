@@ -1,0 +1,805 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta charset="UTF-8">
+    <title>O‘quvchi arizasi</title>
+    <style>
+        /* Umumiy konteyner uchun */
+        .form_container {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* Label uchun */
+        .form_container label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Select uchun */
+        .form_container select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Fokusda select */
+        .form_container select:focus {
+            outline: none;
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Select hover effekti */
+        .form_container select:hover {
+            border-color: #999;
+        }
+
+        /* Yaxshi spacing uchun */
+        .form_container br {
+            display: none;
+        }
+
+        .form_container .form-group {
+            margin-bottom: 16px;
+        }
+
+        #transfer_fields {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background-color: #f9fafb;
+            border: 1px dashed #ccc;
+            border-radius: 10px;
+        }
+
+        .button {
+
+            background-color: green;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 16px;
+            width: 100%;
+
+        }
+
+        /* Ichidagi label */
+        #transfer_fields label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form_container input[type="text"],
+        .form_container input[type="date"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form_container input[type="text"]:focus,
+        .form_container input[type="date"]:focus,
+        input[type="tel"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .form_container input[type="text"]:hover,
+        .form_container input[type="date"]:hover {
+            border-color: #999;
+        }
+
+        /* Select va file input uchun */
+        #transfer_fields select,
+        #transfer_fields input[type="file"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Fokusdagi inputlar */
+        #transfer_fields select:focus,
+        #transfer_fields input[type="file"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+
+        input[type="tel"]::placeholder {
+            color: #aaa;
+        }
+
+        .header {
+            text-align: center;
+            font-size: 30px;
+            margin-top: 20px;
+        }
+    </style>
+
+
+</head>
+<body>
+<h1 class="header">O‘quvchi arizasini to‘ldirish</h1>
+
+<div class="form_container" id="form_container_0">
+    <div class="form-group">
+        <label for="telephone">Telefon raqam:</label>
+        <input type="tel" placeholder="+998779998816" id="telephone" maxlength="13" name="number" required>
+        <p style="font-size: 20px;" id="saved_number"></p>
+    </div>
+    <button type="button" id="info-btn" class="button" onclick="takeUserID()">Studentni yaratish</button>
+</div>
+
+<!-- Step 1: Select Program and Faculty -->
+<div class="form_container" style="display: none;" id="form_container_1">
+
+    <div class="form-group">
+        <label for="programs">Ta'lim turi</label>
+        <select name="program_id" id="programs" onchange="takeFaculty()">
+            <option value="" selected disabled>-- Tanlang --</option>
+            {% for program in programs %}
+            <option value="{{ program.id }}">{{ program.name_uz }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="study_faculty" id="study_faculty_label" style="display: none;">Fakultet</label>
+        <select name="faculty_id" id="study_faculty" style="display: none;" onchange="saveFacultyID()"></select>
+    </div>
+
+    <div class="form-group">
+        <label id="study_types_label" style="display: none;" for="study_types">Ta'lim shakli</label>
+        <select id="study_types" name="study_type_id" style="display: none;" onchange="handleChange()"></select>
+    </div>
+
+
+    <div class="form-group" id="transfer_fields" style="display: none;">
+        <label for="current_course">Nechanchi kursda o‘qiydi?</label>
+        <select id="current_course" name="current_course" onchange="saveCurrentCourse()">
+            <option value="">-- Tanlang --</option>
+            <option value="1">1-kurs</option>
+            <option value="2">2-kurs</option>
+            <option value="3">3-kurs</option>
+            <option value="4">4-kurs</option>
+        </select>
+
+        <label for="transfer_file">Ko‘chirish fayli (PDF yoki boshqa)</label>
+        <input type="file" id="transfer_file" name="transfer_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+               onchange="handleChange()">
+    </div>
+</div>
+
+<!-- Step 2: Registration Form -->
+<div class="form_container" style="display: none;" id="form_container_nd">
+
+
+    <label id="passport_label" style="display: none;" for="passport">Passport raqami</label>
+    <input type="text" id="passport" style="display: none;" name="passport" placeholder="AA1234567" required>
+
+    <label for="dob" id="dob_label" style="display: none;">Tug‘ilgan sana</label>
+    <input type="date" id="dob" style="display: none;" name="dob" required>
+    <button type="button" id="button_special" class="button" onclick="takeProfileInfo()">Ma'lumot olish</button>
+</div>
+
+
+<div class="form_container" id="student_info_container" style="display: none;"></div>
+
+<div class="form_container" id="last_form" style="display: none;">
+
+    <label for="lang">Imtihon tili</label>
+    <select id="lang" name="lang" required>
+        <option value="uz">O‘zbek tili</option>
+        <option value="ru">Rus tili</option>
+    </select>
+    <button type="button" class="button" onclick="createStudent()">📨 Arizani jo‘natish</button>
+</div>
+
+
+<script>
+    function clearAllLocalStorage() {
+        localStorage.removeItem("number");
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("program_id");
+        localStorage.removeItem("faculty_id");
+        localStorage.removeItem("study_type_id");
+        localStorage.removeItem("current_course");
+        localStorage.removeItem("is_transfer");
+        window.location.reload();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const savedNumber = localStorage.getItem("number");
+        const user_id = localStorage.getItem("user_id");
+        if (savedNumber && user_id) {
+            console.log("savedNumber", savedNumber)
+            const telephoneInput = document.getElementById("telephone");
+            const h1Input = document.getElementById("saved_number");
+            if (telephoneInput) {
+                const form = document.getElementById("form_container_1");
+                const button = document.getElementById("info-btn");
+                form.style.display = "block";
+                telephoneInput.style.display = 'none'
+                button.innerHTML = "Malumotlarni tozalash"
+                button.style.backgroundColor = "red"
+                button.onclick = function () {
+                    clearAllLocalStorage();
+                };
+                h1Input.innerHTML = savedNumber;
+
+            }
+        }
+
+    });
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const passportInput = document.getElementById("passport");
+        const telephoneInput = document.getElementById("telephone");
+
+        passportInput.addEventListener("input", function () {
+            let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            // Faqat 2 harf va 7 raqamgacha cheklaymiz
+            let letters = value.slice(0, 2).replace(/[^A-Z]/g, '');
+            let numbers = value.slice(2).replace(/[^0-9]/g, '').slice(0, 7);
+            this.value = letters + numbers;
+        });
+        telephoneInput.value = "+998";
+
+// Faqat +998 bilan boshlashiga va ortidan faqat raqam yozilishiga ruxsat beramiz
+        telephoneInput.addEventListener("input", function () {
+            let value = this.value;
+
+            // +998ni boshida saqlab qolamiz, qolgan raqamlarni ajratib olamiz
+            let numbers = value.replace(/\D/g, '').slice(3); // faqat +998dan keyingi raqamlar
+            this.value = "+998" + numbers.slice(0, 9); // 9 ta raqamgacha cheklaymiz
+        });
+
+
+        passportInput.addEventListener("keydown", function (e) {
+            const allowedKeys = [
+                "Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"
+            ];
+            if (allowedKeys.includes(e.key)) return;
+
+            if (this.value.length >= 13) {
+                e.preventDefault();
+            }
+        });
+        telephoneInput.addEventListener("keydown", function (e) {
+            const allowedKeys = [
+                "Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"
+            ];
+            if (allowedKeys.includes(e.key)) return;
+
+            if (this.value.length >= 13) {
+                e.preventDefault();
+            }
+        });
+    });
+
+
+    function takeFaculty() {
+
+        const transferFields = document.getElementById("transfer_fields");
+        const programSelect = document.getElementById("programs");
+        const studySelect = document.getElementById("study_types");
+        const studySelectLabel = document.getElementById("study_types_label");
+        const studyFacultySelect = document.getElementById("study_faculty");
+        const studyFacultySelectLabel = document.getElementById("study_faculty_label");
+        const selectedValue = programSelect.value;
+
+        console.log(selectedValue)
+        if (selectedValue === "30") {
+            transferFields.style.display = "block";
+            studySelect.style.display = "none";
+            studySelectLabel.style.display = "none";
+            studyFacultySelect.style.display = "none";
+            studyFacultySelectLabel.style.display = "none";
+            localStorage.setItem("is_transfer", "True");
+            localStorage.setItem("program_id", "30");
+        } else {
+            localStorage.removeItem("is_transfer");
+            transferFields.style.display = "none";
+            sendProgramId(programSelect);
+        }
+
+
+    }
+
+    function sendProgramId(select) {
+        const selectedValue = select.value;
+        localStorage.setItem("program_id", selectedValue);
+
+        function getCSRFToken() {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]');
+            return token ? token.value : '';
+        }
+
+        fetch("{% url 'student-program-id' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: `program_id=${selectedValue}`
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Xatolik yuz berdi");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Backenddan kelgan data:", data);
+
+                if (data.study_types) {
+                    const studySelect = document.getElementById("study_types");
+                    const studySelectLabel = document.getElementById("study_types_label");
+
+
+                    if (!studySelect) {
+                        console.warn("❗️#study_types elementi topilmadi");
+                        return;
+                    }
+
+                    // oldingi optionlarni tozalash
+                    studySelect.innerHTML = "";
+
+
+                    // default option qo‘shish
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.disabled = true;
+                    defaultOption.selected = true;
+                    defaultOption.textContent = "-- Tanlang --";
+                    studySelect.appendChild(defaultOption);
+
+                    // yangi optionlarni qo‘shish
+                    data.study_types.forEach(item => {
+                        const option = document.createElement("option");
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        studySelect.appendChild(option);
+                    });
+                    studySelect.style.display = "inline-block";
+                    studySelectLabel.style.display = "inline";
+                }
+                if (data.study_faculties) {
+                    const studyFacultySelect = document.getElementById("study_faculty");
+                    const studyFacultySelectLabel = document.getElementById("study_faculty_label");
+                    studyFacultySelect.innerHTML = "";
+                    studyFacultySelectLabel.style.display = "inline";
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.disabled = true;
+                    defaultOption.selected = true;
+                    defaultOption.textContent = "-- Tanlang --";
+                    studyFacultySelect.appendChild(defaultOption);
+                    const facultiesGroup = data.study_faculties[0];  // ro‘yxatdagi birinchi element
+                    if (facultiesGroup && facultiesGroup.faculties) {
+                        facultiesGroup.faculties.forEach(item => {
+                            const option = document.createElement("option");
+                            option.value = item.id;
+                            option.textContent = item.name;
+                            studyFacultySelect.appendChild(option);
+                        });
+                    }
+                    studyFacultySelect.style.display = "inline-block";
+                    studyFacultySelectLabel.style.display = "inline";
+                }
+            })
+            .catch(error => {
+                console.error("Xatolik:", error);
+            });
+    }
+
+    function handleChange() {
+        const user_id = localStorage.getItem("user_id");
+
+        function getCSRFToken() {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]');
+            return token ? token.value : '';
+        }
+
+        fetch("{% url 'student-get' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: `user_id=${encodeURIComponent(user_id)}`
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Xatolik yuz berdi");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.student) {
+                    console.log("Yuborilgan ma’lumotlarga javob:", data);
+                    showStudentInfo(data.student);
+                    return;
+                }
+
+
+                const Passport = document.getElementById("passport");
+                const PassportLabel = document.getElementById("passport_label");
+                const DOB = document.getElementById("dob");
+                const DOBLabel = document.getElementById("dob_label");
+                const container = document.getElementById("form_container_nd");
+                const StudyType = document.getElementById("study_types");
+                const selectedValue = StudyType.value;
+
+                localStorage.setItem("study_type_id", selectedValue);
+
+                Passport.style.display = "inline-block";
+                PassportLabel.style.display = "block";
+                DOB.style.display = "inline-block";
+                DOBLabel.style.display = "block";
+                container.style.display = "block";
+            })
+            .catch(error => {
+                console.error("Xatolik:", error);
+                alert("Telefon raqamni yuborishda xatolik yuz berdi.");
+            });
+    }
+
+    function takeUserID() {
+        let telephone = document.getElementById("telephone").value.trim();
+
+        if (!telephone.startsWith("+998")) {
+            telephone = "+998" + telephone.replace(/^(\+998)?/, '');
+        }
+
+        if (telephone.length !== 13) {
+            alert("Telefon raqami to‘liq emas. To‘liq format: +998901234567");
+            return;
+        }
+        localStorage.setItem("number", telephone);
+
+        function getCSRFToken() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            console.log(meta.content)
+            return meta ? meta.content : '';
+
+        }
+
+        fetch("{% url 'student-create-admin' %}", {
+            method: "POST",
+            credentials: 'same-origin',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: `phone_number=${encodeURIComponent(telephone)}`
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw err;  // bu error.catch() ga tushadi
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Yuborilgan ma’lumotlarga javob:", data);
+                if (data.user_id) {
+                    localStorage.setItem("user_id", data.user_id);
+                    console.log("user_id saqlandi:", data.user_id);
+                }
+                window.location.reload();
+
+                const form = document.getElementById("form_container_1");
+                form.style.display = "block";
+            })
+            .catch(error => {
+                if (error.detail) {
+                    alert(error.detail);
+                } else {
+                    alert("Telefon raqamni yuborishda xatolik yuz berdi.");
+                }
+            });
+    }
+
+
+    function takeProfileInfo() {
+        const passport = document.getElementById("passport").value.trim();
+        const dob = document.getElementById("dob").value;
+        const user_id = localStorage.getItem("user_id");
+
+        function getCSRFToken() {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]');
+            return token ? token.value : '';
+        }
+
+        fetch("{% url 'student-create-passport' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: `passport=${encodeURIComponent(passport)}&dob=${encodeURIComponent(dob)}&user_id=${user_id}`
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw err;  // bu error.catch() ga tushadi
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Yuborilgan ma’lumotlarga javob:", data);
+                const btn = document.getElementById("button_special")
+                btn.style.display = "none"
+                showStudentInfo(data.student);
+            })
+            .catch(error => {
+                console.error("Xatolik:", error);
+                if (error.detail) {
+                    alert(error.detail);
+                } else {
+                    alert("Xatolik yuz berdi.");
+                }
+            });
+    }
+
+    function saveFacultyID() {
+        const facultySelect = document.getElementById("study_faculty");
+        const selectedValue = facultySelect.value;
+        localStorage.setItem("faculty_id", selectedValue);
+    }
+
+    function showStudentInfo(student) {
+        const container = document.getElementById("student_info_container");
+        container.innerHTML = ''; // avvalgi contentni tozalaymiz
+
+        function createReadonlyInput(labelText, value, not_readonly = null, id = null) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "form-group";
+
+            const label = document.createElement("label");
+            label.textContent = labelText;
+            if (id) label.setAttribute("for", id);
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = value || "";
+            input.readOnly = !not_readonly;
+            input.className = not_readonly ? "" : "readonly_input";
+            if (id) input.id = id;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(input);
+            return wrapper;
+        }
+
+        function createSelectInput(labelText, selectedValue, optionsDict, id = null) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "form-group";
+
+            const label = document.createElement("label");
+            label.textContent = labelText;
+            if (id) label.htmlFor = id;
+
+            const select = document.createElement("select");
+            if (id) select.id = id;
+
+            for (const [key, val] of Object.entries(optionsDict)) {
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = val;
+                if (String(key) === String(selectedValue)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            }
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(select);
+            return wrapper;
+        }
+
+
+        const qualificationLabels = {
+            1: "O'rta maktab",
+            2: "Kollej",
+            3: "Litsey",
+            4: "Universitet",
+            5: "Texnikum"
+        };
+
+        container.appendChild(createReadonlyInput("Ismi", student.first_name));
+        container.appendChild(createReadonlyInput("Familiyasi", student.last_name));
+        container.appendChild(createReadonlyInput("Otasining ismi", student.father_name));
+        container.appendChild(createReadonlyInput("Tug‘ilgan sana", student.birth_date));
+        container.appendChild(createReadonlyInput("Tug‘ilgan joy", student.birth_place));
+        container.appendChild(createReadonlyInput("Passport", student.passport_number));
+        container.appendChild(createReadonlyInput("JSHSHIR", student.pinfl));
+        container.appendChild(createReadonlyInput("Fuqaroligi", student.citizenship));
+        container.appendChild(createSelectInput("Ta'lim darajasi", student.qualification, qualificationLabels, "qualification"));
+        container.appendChild(createReadonlyInput("Ta'lim muassasasi", student.name_qualification, no_readonly = true, id = "name_qualification"));
+        const label1 = document.createElement("label");
+        label1.textContent = "Qo'shimcha telefon raqami";
+        label1.for = "additional_telephone";
+        container.appendChild(label1);
+        const input1 = document.createElement("input");
+        input1.type = "tel";
+        input1.placeholder = "+998901234567";
+        input1.id = "additional_telephone";
+        container.appendChild(input1);
+        const label2 = document.createElement("label");
+        label2.textContent = "Diplom";
+        label2.for = "diploma";
+        container.appendChild(label2);
+        const input2 = document.createElement("input");
+        input2.type = "file";
+        input2.id = "diploma";
+        input2.placeholder = "Faylni kiriting";
+        container.appendChild(input2);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "button";
+        button.id = "button_special1";
+        button.textContent = "Davom ettirish";
+        button.onclick = function () {
+            updateProfileInfo();
+        }
+        container.appendChild(button);
+
+        container.style.display = "block";
+    }
+
+    function updateProfileInfo() {
+        const additional_telephone = document.getElementById("additional_telephone").value;
+        const diploma = document.getElementById("diploma").files[0];
+        const qualification = document.getElementById("qualification").value;
+        const name_qualification = document.getElementById("name_qualification").value;
+        const user_id = localStorage.getItem("user_id");
+
+        const formData = new FormData();
+        formData.append("additional_phone_number", additional_telephone);
+        formData.append("diploma", diploma);
+        formData.append("qualification", qualification);
+        formData.append("name_qualification", name_qualification);
+        formData.append("user_id", user_id);
+
+        function getCSRFToken() {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]');
+            return token ? token.value : '';
+        }
+
+        fetch("{% url 'student-update' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Xatolik yuz berdi");
+                }
+                return response.json();
+            })
+            .then(data => {
+                const last_form = document.getElementById("last_form");
+                last_form.style.display = "block";
+                const btn = document.getElementById("button_special1")
+                btn.style.display = "none"
+
+            })
+            .catch(error => {
+                console.error("Xatolik:", error);
+                alert("Ma’lumot yuborishda xatolik yuz berdi");
+            });
+    }
+
+    function createStudent() {
+        const lang = document.getElementById("lang").value;
+        const is_transfer = localStorage.getItem("is_transfer");
+        const formData = new FormData();
+        const user_id = localStorage.getItem("user_id");
+        formData.append("user_id", user_id);
+        formData.append("lang", lang);
+        if (is_transfer === "True") {
+            const current_course = localStorage.getItem("current_course");
+            const program_id = localStorage.getItem("program_id");
+            const faculty_id = localStorage.getItem("faculty_id");
+            const transfer_file = document.getElementById("transfer_file").files[0];
+            formData.append("transfer_level", current_course);
+            formData.append("program_id", program_id);
+            formData.append("faculty_id", faculty_id);
+            formData.append("transcript", transfer_file);
+
+
+
+        } else {
+            const study_type_id = localStorage.getItem("study_type_id");
+            const faculty_id = localStorage.getItem("faculty_id");
+            const program_id = localStorage.getItem("program_id");
+            formData.append("study_type_id", study_type_id);
+            formData.append("faculty_id", faculty_id);
+            formData.append("program_id", program_id);
+        }
+
+        function getCSRFToken() {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]');
+            return token ? token.value : '';
+        }
+
+        fetch("{% url 'create-student-application-admin' %}", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw err
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Ariza muvaffaqiyatli yuborildi:", data);
+                alert("Ariza muvaffaqiyatli yuborildi!");
+                clearAllLocalStorage();
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error("Xatolik:", error);
+                if (error.detail) {
+                    alert(error.detail);
+                } else {
+                    alert("Ariza yuborishda xatolik yuz berdi.");
+                }
+            });
+
+    }
+
+    function saveCurrentCourse() {
+        const courseSelect = document.getElementById("current_course").value;
+        localStorage.setItem("current_course", courseSelect);
+    }
+
+</script>
+
+</body>
+</html>
